@@ -8,6 +8,8 @@
 - Ran clean and noisy evaluations and generated the qualitative and bar-chart figures.
 - No pretrained weights or external APIs were used.
 - Wrote and tested the Streamlit demo app (`streamlit_app.py`) and `make_samples.py` (exports 5 NYU test frames to `samples/`).Deployed on Streamlit Community Cloud from the fork `Sanjana2906/depth-upsampling` (Streamlit needs repo admin rights, which the original repo does not give contributors). Live URL: https://depth-upsampling-ncflvqguerfmecgrmz5xmd.streamlit.app/. Verified on desktop and mobile: the sample scene runs end to end with the same output (images, metrics table, error maps).
+- Updated SSIM calculation to average the SSIM map over valid ground-truth depth pixels only.
+- Added peak CPU memory tracking using psutil, including Windows peak working-set support.
 
 ## Environment and measurements
 
@@ -61,7 +63,7 @@ Results are in `outputs/results.csv`, `outputs/results.md`,
 
 - The training/evaluation run was CPU-only; model inference is comparatively slow.
 - The experiment uses a 500-frame subset and a contiguous split, so it does not establish generalization to unseen datasets or independent scene splits.
-- SSIM is computed over each full frame, including invalid-depth placeholder pixels; RMSE/MAE use only valid ground-truth pixels.
+- SSIM is now computed using the SSIM map averaged over valid ground-truth depth pixels only. The modified implementation has passed syntax compilation and module import checks, but full dataset-based evaluation is pending.
 - Hybrid boundary RMSE did not improve over Bicubic at any factor in this run. Results were not tuned or altered.
 - The demo needs an RGB image plus a depth map. There is no monocular depth model, so an RGB image alone is refused with a message.
 - Streamlit Community Cloud's free tier has limited memory and puts apps with no traffic for 12 hours to sleep. Open the URL before judging.
@@ -79,6 +81,5 @@ Results are in `outputs/results.csv`, `outputs/results.md`,
 - Explore hole filling, a depth-discontinuity detector, and an adaptive edge-confidence gate.
 - Retrain both models on a GPU (Colab T4), then re-run evaluate, evaluate --noise and figures.
 - Tune guided-filter eps and radius on the val split.
-- Add peak CPU memory and fix SSIM to use valid pixels only.
 - Format `eval_P4_<TeamID>.md` as the PS requires.
 - Update the report claims to match the final numbers.

@@ -481,7 +481,11 @@ def _predict(
 def _synchronize(device: torch.device) -> None:
     if device.type == "cuda":
         torch.cuda.synchronize(device)
-
+        
+def _peak_rss_mib() -> float:
+    import psutil
+    info = psutil.Process().memory_info()
+    return getattr(info, "peak_wset", info.rss) / (1024.0 ** 2)  # peak_wset is Windows-only
 
 def _predict_method(
     method: str,
@@ -711,12 +715,14 @@ def evaluate(
                 for position in range(4):
                     total[position] += values[position]
                     boundary_total[position] += boundary_values[position]
+                _, ssim_map = structural_similarity(
+                    target.astype(np.float32),
+                    prediction.astype(np.float32),
+                    data_range=DMAX,
+                    full=True,
+                )
                 ssim_by_method[method] += float(
-                    structural_similarity(
-                        target.astype(np.float32),
-                        prediction.astype(np.float32),
-                        data_range=DMAX,
-                    )
+                    ssim_map[(target > 0) & (target <= DMAX)].mean()
                 )
             if count % 10 == 0 or count == len(test_indices):
                 print(f"  factor={factor} processed {count}/{len(test_indices)}")
@@ -771,6 +777,7 @@ def evaluate(
             print(f"{family}: peak GPU memory={peak_memory[family] / (1024.0 ** 2):.2f} MiB")
         else:
             print(f"{family}: peak GPU memory=N/A (CPU)")
+    print(f"Peak CPU memory (process): {_peak_rss_mib():.0f} MiB")
     return output_path
 
 
