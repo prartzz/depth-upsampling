@@ -7,7 +7,7 @@
 - Trained the CNN-only and Hybrid models for 8 minutes each without noisy input. CNN completed 27 steps (validation loss 0.01807); Hybrid completed 46 steps (validation loss 0.00804).
 - Ran clean and noisy evaluations and generated the qualitative and bar-chart figures.
 - No pretrained weights or external APIs were used.
-- Wrote and tested the Streamlit demo app (`streamlit_app.py`) locally, plus `make_samples.py`, which exports 5 NYU test frames to `samples/`. The app reuses functions from `ps4.py`. Local testing is complete; deploying the app and adding its public URL are the remaining UI tasks.
+- Wrote and tested the Streamlit demo app (`streamlit_app.py`) and `make_samples.py` (exports 5 NYU test frames to `samples/`).Deployed on Streamlit Community Cloud from the fork `Sanjana2906/depth-upsampling` (Streamlit needs repo admin rights, which the original repo does not give contributors). Live URL: https://depth-upsampling-ncflvqguerfmecgrmz5xmd.streamlit.app/. Verified on desktop and mobile: the sample scene runs end to end with the same output (images, metrics table, error maps).
 
 ## Environment and measurements
 
@@ -51,6 +51,7 @@ streamlit run streamlit_app.py
 ```
 
 Deploy: push the repo to a public GitHub repo (without `.venv/` and `data/`), then on share.streamlit.io choose Create app, pick the repo and branch, set the main file to `streamlit_app.py`, and deploy. The repo must contain `streamlit_app.py`, `ps4.py`, `requirements.txt`, `samples/` and the two checkpoint files. Hugging Face Spaces was dropped because creating a Gradio Space now needs a paid plan.
+The live app is deployed from the fork, so push updates to the fork's `main` branch to change it.
 
 Results are in `outputs/results.csv`, `outputs/results.md`,
 `outputs/results_noisy.csv`, and `outputs/results_noisy.md`. Figures are in
@@ -65,10 +66,12 @@ Results are in `outputs/results.csv`, `outputs/results.md`,
 - The demo needs an RGB image plus a depth map. There is no monocular depth model, so an RGB image alone is refused with a message.
 - Streamlit Community Cloud's free tier has limited memory and puts apps with no traffic for 12 hours to sleep. Open the URL before judging.
 - The bar chart uses clean evaluation results; noisy metrics are available in their separate CSV and Markdown files.
+- Demo scene_1 at 4x, clean: Bicubic has the best RMSE (0.0308), MAE (0.0132) and boundary RMSE (0.0708). The hybrid is worst (RMSE 0.0474, boundary 0.1026) and about 160 ms vs 0.2 ms. Guided filter (0.0441) is worse than bicubic, so eps/radius are probably untuned.
+- The hybrid error map shows faint background texture from the RGB guidance (texture-copying).
+- Hole filling, the discontinuity detector and the Middlebury/KITTI test are not implemented. The audit marks missing-depth handling "insufficient", and SSIM includes invalid pixels.
 
 ## Teammate TODOs
 
-- Deploy the locally tested app to Streamlit Community Cloud, test the public URL on a phone, then add the URL to `README.md` and below. No live URL means 0 for UI/UX.
 - Create an architecture diagram and a design document.
 - Create `eval_P4_<TeamID>.md` from `results.md`.
 - Document 3 failure cases.
@@ -76,6 +79,6 @@ Results are in `outputs/results.csv`, `outputs/results.md`,
 - Explore hole filling, a depth-discontinuity detector, and an adaptive edge-confidence gate.
 - Retrain both models on a GPU (Colab T4), then re-run evaluate, evaluate --noise and figures.
 - Tune guided-filter eps and radius on the val split.
-- Add peak memory.
-Format eval_P4_<TeamID>.md as the PS requires.
+- Add peak CPU memory and fix SSIM to use valid pixels only.
+- Format `eval_P4_<TeamID>.md` as the PS requires.
 - Update the report claims to match the final numbers.
